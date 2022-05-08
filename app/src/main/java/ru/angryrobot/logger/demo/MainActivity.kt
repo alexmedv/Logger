@@ -1,12 +1,10 @@
 package ru.angryrobot.logger.demo
 
-import androidx.appcompat.app.AppCompatActivity
+
 import android.os.Bundle
-import android.widget.Button
+import androidx.appcompat.app.AppCompatActivity
 import ru.angryrobot.logger.Logger
-
-
-
+import ru.angryrobot.logger.demo.databinding.ActivityMainBinding
 import java.io.File
 
 class MainActivity : AppCompatActivity() {
@@ -16,7 +14,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        val binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         log = Logger(File(filesDir, "logs"))
 
         log.exceptionLogger = {
@@ -27,18 +26,34 @@ class MainActivity : AppCompatActivity() {
 
         }
 
-        findViewById<Button>(R.id.button).setOnClickListener {
-
+        binding.logVerbose.setOnClickListener {
+            log.v("Simple \'verbose\' log entry")
         }
-        findViewById<Button>(R.id.button2).setOnClickListener {
-
+        binding.logDebug.setOnClickListener {
+            log.v("\'Debug\' log entry with custom tag", tag = "SomeTag")
         }
-        findViewById<Button>(R.id.button3).setOnClickListener {
+        binding.logInfo.setOnClickListener {
+            log.i("Info")
+        }
+        binding.logWarning.setOnClickListener {
+            log.w("Warning")
+        }
+        binding.logError.setOnClickListener {
             someFunction()
+        }
+        binding.logAssert.setOnClickListener {
+            log.a("Assert")
+        }
+        binding.writeToFiles.setOnCheckedChangeListener { _, isChecked ->
+            log.writeToFile = isChecked
+        }
+        binding.writeToLogcat.setOnCheckedChangeListener { _, isChecked ->
+            log.writeToLogcat = isChecked
         }
     }
 
     fun someFunction() {
 
+        log.e("Something went wrong :(", Exception("Ex"))
     }
 }

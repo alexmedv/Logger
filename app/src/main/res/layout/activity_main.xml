@@ -6,45 +6,80 @@
     android:layout_height="match_parent"
     tools:context="ru.angryrobot.demo.MainActivity">
 
-    <TextView
-        android:id="@+id/textView"
+    <LinearLayout
+        android:id="@+id/linearLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
-        android:id="@+id/button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="45dp"
-        android:text="Button"
-        app:layout_constraintEnd_toStartOf="@+id/button2"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
 
-    <Button
-        android:id="@+id/button2"
+        <Button
+            android:id="@+id/logVerbose"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Verbose"
+            app:backgroundTint="#020202" />
+
+        <Button
+            android:id="@+id/logDebug"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Debug"
+            app:backgroundTint="#020280" />
+
+        <Button
+            android:id="@+id/logInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Info"
+            app:backgroundTint="#028002" />
+
+        <Button
+            android:id="@+id/logWarning"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Warning"
+            app:backgroundTint="#FF8002" />
+
+        <Button
+            android:id="@+id/logError"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Error"
+            app:backgroundTint="#FF0202" />
+
+        <Button
+            android:id="@+id/logAssert"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Assert"
+            app:backgroundTint="#8102FF" />
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="3dp"
-        android:text="Button"
-        app:backgroundTint="@color/purple_200"
-        app:layout_constraintBaseline_toBaselineOf="@+id/button"
-        app:layout_constraintEnd_toStartOf="@+id/button3"
-        app:layout_constraintStart_toEndOf="@+id/button" />
+        android:layout_marginStart="16dp"
+        android:orientation="vertical"
+        app:layout_constraintStart_toEndOf="@+id/linearLayout"
+        app:layout_constraintTop_toTopOf="@+id/linearLayout">
 
-    <Button
-        android:id="@+id/button3"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Button"
-        app:backgroundTint="@color/teal_200"
-        app:layout_constraintBaseline_toBaselineOf="@+id/button2"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/button2" />
+        <CheckBox
+            android:id="@+id/writeToLogcat"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Write to LogCat" />
+
+        <CheckBox
+            android:id="@+id/writeToFiles"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Write to files" />
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

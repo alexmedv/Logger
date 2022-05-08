@@ -3,17 +3,14 @@ package ru.angryrobot.logger
 /***
  * Добавить принтТехникалДата и всякие интересные штуки для логирования
  * Добавить логирование номера линии
- * Лог левелы добавить
- *
+ * dateFormat - вынести в конфиг
+ * Посмотреть как там в джаве оно будет работать
  */
 import android.annotation.SuppressLint
 import android.os.Process
 import android.os.SystemClock
 import android.util.Log
 import androidx.annotation.IntRange
-import androidx.annotation.Size
-import androidx.annotation.StringDef
-import org.jetbrains.annotations.NotNull
 import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -28,13 +25,16 @@ class Logger(logsDir: File?) {
     var writeToLogcat = true
     var writeToFile = true
 
+    var logLevel: LogLevel = LogLevel.VERBOSE
+
     var firebaseLogger: ((String) -> Unit)? = null
     var exceptionLogger: ((Throwable) -> Unit)? = null
 
     private val fileHandler: FileHandler?
+
     @SuppressLint("ConstantLocale")
     private val dateFormat = SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US)
-    private val pid  = Process.myPid().toString()
+    private val pid = Process.myPid().toString()
 
 
     val settings: LoggerSettings
@@ -45,7 +45,12 @@ class Logger(logsDir: File?) {
 
             if (!logsDir.exists()) logsDir.mkdirs()
 
-            FileHandler("${logsDir.absolutePath}/logfile.txt", settings.fileSettings.logFilesSize, settings.fileSettings.logFilesCount, true).apply {
+            FileHandler(
+                File(logsDir.absolutePath, settings.fileSettings.logFilesName).absolutePath,
+                settings.fileSettings.logFilesSize,
+                settings.fileSettings.logFilesCount,
+                true
+            ).apply {
                 formatter = object : java.util.logging.Formatter() {
                     override fun format(record: LogRecord) = record.message
                 }
@@ -72,19 +77,9 @@ class Logger(logsDir: File?) {
         zipOutput.close()
     }
 
-    private fun priorityString(priority:Int):String = when (priority) {
-        Log.VERBOSE -> "V"
-        Log.DEBUG -> "D"
-        Log.INFO -> "I"
-        Log.WARN -> "W"
-        Log.ERROR -> "E"
-        Log.ASSERT -> "A"
-        else -> ""
-    }
-
-    private fun writeToFile(priority: Int, tag: String, message: String) {
+    private fun writeToFile(priority: LogLevel, tag: String, message: String) {
         if (fileHandler != null) {
-            val string = "${dateFormat.format(Date())} ${priorityString(priority)}/$tag ($pid): $message\n"
+            val string = "${dateFormat.format(Date())} ${priority.string}/$tag ($pid): $message\n"
             fileHandler.publish(LogRecord(Level.INFO, string))
         }
     }
@@ -98,31 +93,31 @@ class Logger(logsDir: File?) {
 
 
     fun v(message: Any, logEvent: Boolean = false, tag: String? = null) {
-        writeLog(Log.VERBOSE, message, null, logEvent, tag)
+        writeLog(LogLevel.VERBOSE, message, null, logEvent, tag)
     }
 
     fun d(message: Any, logEvent: Boolean = false, tag: String? = null) {
-        writeLog(Log.DEBUG, message, null, logEvent, tag)
+        writeLog(LogLevel.DEBUG, message, null, logEvent, tag)
     }
 
     fun i(message: Any, logEvent: Boolean = false, tag: String? = null) {
-        writeLog(Log.INFO, message, null, logEvent, tag)
+        writeLog(LogLevel.INFO, message, null, logEvent, tag)
     }
 
     fun w(message: Any, logEvent: Boolean = false, tag: String? = null) {
-        writeLog(Log.WARN, message, null, logEvent, tag)
+        writeLog(LogLevel.WARN, message, null, logEvent, tag)
     }
 
     fun e(message: Any, logEvent: Boolean = false, tag: String? = null) {
-        writeLog(Log.ERROR, message, null, logEvent, tag)
+        writeLog(LogLevel.ERROR, message, null, logEvent, tag)
     }
 
     fun e(message: Any, exception: Throwable? = null, logEvent: Boolean = false, tag: String? = null) {
-        writeLog(Log.ERROR, message, exception, logEvent, tag)
+        writeLog(LogLevel.ERROR, message, exception, logEvent, tag)
     }
 
-    fun a(message: Any, logEvent: Boolean = false, tag:String? = null) {
-        writeLog(Log.ASSERT, message, null, logEvent, tag)
+    fun a(message: Any, logEvent: Boolean = false, tag: String? = null) {
+        writeLog(LogLevel.ASSERT, message, null, logEvent, tag)
     }
 
 
@@ -130,8 +125,8 @@ class Logger(logsDir: File?) {
         //TODO
     }
 
-    private fun writeLog(logLevel: Int, message: Any, exception: Throwable?, logEvent: Boolean, customTag: String? = null) {
-
+    private fun writeLog(logLevel: LogLevel, message: Any, exception: Throwable?, logEvent: Boolean, customTag: String? = null) {
+        if (logLevel.code < this.logLevel.code) return
         val tag = if (customTag != null) {
             customTag
         } else {
@@ -139,10 +134,10 @@ class Logger(logsDir: File?) {
             "[${element.className.split(".").last()}.${element.methodName}]"
         }
 
-        if (writeToLogcat) Log.println(logLevel, tag, message.toString())
+        if (writeToLogcat) Log.println(logLevel.code, tag, message.toString())
 
         if (logEvent) {
-            firebaseLogger?.invoke("${priorityString(logLevel)}/$tag $message")
+            firebaseLogger?.invoke("${logLevel.string}/$tag $message")
             if (exception != null) {
                 exceptionLogger?.invoke(exception)
             }
@@ -151,6 +146,7 @@ class Logger(logsDir: File?) {
         if (writeToFile) {
             writeToFile(logLevel, tag, message.toString())
             if (exception != null) {
+                // TODO проверку добавить,  может не хотим писать ничего сюда
                 exception.printStackTrace()
                 val exceptionString = getStackTrace(exception)
                 writeToFile(logLevel, tag, exceptionString)
@@ -195,10 +191,20 @@ class LoggerSettings(logsDir: File?) {
          */
         @IntRange(from = 1) val logFilesCount: Int = 5,
 
-        /*
-         * Each log file
+        /**
+         * Sets the name for the log files. The logger will add a number to the end of the name,
+         * so the files in the `logsDir` directory will have names likes "logfile.txt.0", "logfile.txt.1" etc...
          */
-        val logFilesName:String = "logfile.txt"
+        val logFilesName: String = "logfile.txt"
     )
 
+}
+
+enum class LogLevel(val code: Int, val string: String) {
+    VERBOSE(Log.VERBOSE, "V"),
+    DEBUG(Log.DEBUG, "D"),
+    INFO(Log.INFO, "I"),
+    WARN(Log.WARN, "W"),
+    ERROR(Log.ERROR, "E"),
+    ASSERT(Log.ASSERT, "A"),
 }

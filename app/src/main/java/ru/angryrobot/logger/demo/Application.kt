@@ -8,13 +8,13 @@ import java.io.File
 
 class Application : android.app.Application() {
 
-    val myLogger by lazy { Logger(File(filesDir, "logs")) }
+//    val myLogger by lazy { Logger(File(filesDir, "logs")) }
 
     val handler = Handler(Looper.getMainLooper())
 
     val runnable = object : Runnable {
         override fun run() {
-            myLogger.w("Hello from other!")
+//            myLogger.w("Hello from other!")
             handler.postDelayed(this, 3000)
         }
 
