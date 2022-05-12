@@ -1,7 +1,5 @@
 package ru.angryrobot.logger.demo
 
-
-import android.R
 import android.os.Bundle
 import android.view.View
 import android.widget.AdapterView
@@ -23,16 +21,16 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         log = Logger(File(filesDir, "logs"))
 
-        log.exceptionLogger = {
+        log.crashlyticsExceptionLogger = {
 
         }
 
-        log.firebaseLogger = {
+        log.crashlyticsLogger = {
 
         }
 
         binding.logLevel.apply {
-            adapter = ArrayAdapter(this@MainActivity , R.layout.simple_spinner_dropdown_item, R.id.text1, LogLevel.values())
+            adapter = ArrayAdapter(this@MainActivity , android.R.layout.simple_spinner_dropdown_item, android.R.id.text1, LogLevel.values())
             onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long ) {
                     log.logLevel = LogLevel.values()[position]

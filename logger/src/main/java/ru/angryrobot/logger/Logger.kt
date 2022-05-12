@@ -19,6 +19,7 @@ package ru.angryrobot.logger
  * Добавить принтТехникалДата и всякие интересные штуки для логирования
  * Добавить логирование номера линии
  * Посмотреть как там в джаве оно будет работать
+ * Подумать насчет многопоточности и работы из разных процессов одного приложения
  */
 import android.annotation.SuppressLint
 import android.os.Process
@@ -37,7 +38,9 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 /**
- * //TODO
+ * Simple and easy to use (according to the author) logger for android
+ * Key features: //TODO
+ *
  */
 class Logger {
 
@@ -54,8 +57,19 @@ class Logger {
      */
     var logLevel: LogLevel = LogLevel.VERBOSE
 
-    var firebaseLogger: ((String) -> Unit)? = null
-    var exceptionLogger: ((Throwable) -> Unit)? = null
+    /**
+     * Used for integration with crash reporter systems like Firebase Crashlytics
+     * Typical use case, call `FirebaseCrashlytics.getInstance().log(message)` in this function
+     * It's needed to give more context for the events leading up to a crash
+     */
+    var crashlyticsLogger: ((String) -> Unit)? = null
+
+    /**
+     * Used for integration with crash reporter systems like Firebase Crashlytics
+     * Typical use case, call `FirebaseCrashlytics.getInstance().recordException(exception)` in this function
+     * It's needed to log non-fatal exceptions in the app
+     */
+    var crashlyticsExceptionLogger: ((Throwable) -> Unit)? = null
 
     /**
      * If true - the logger is destroyed
@@ -121,33 +135,60 @@ class Logger {
         w("$msg: $result msec", logEvent, tag)
     }
 
-
-    fun v(message: Any, logEvent: Boolean = false, tag: String? = null) {
-        writeLog(LogLevel.VERBOSE, message, null, logEvent, tag)
+    /**
+     * Write verbose message
+     *
+     * @param message A message to be logged
+     * @param useCrashlyticsLog - If the parameter is `true`, the message will also be logged via `crashlyticsLogger`
+     * @param tag Used to identify the source of a log message. If the parameter is `null`, the name of the calling function will be used
+     */
+    fun v(message: Any, useCrashlyticsLog: Boolean = false, tag: String? = null) {
+        writeLog(LogLevel.VERBOSE, message, null, useCrashlyticsLog, tag)
     }
 
-    fun d(message: Any, logEvent: Boolean = false, tag: String? = null) {
-        writeLog(LogLevel.DEBUG, message, null, logEvent, tag)
+    /**
+     * Write debug message
+     *
+     * @param message A message to be logged
+     * @param useCrashlyticsLog - If the parameter is `true`, the message will also be logged via `crashlyticsLogger`
+     * @param tag Used to identify the source of a log message. If the parameter is `null`, the name of the calling function will be used
+     */
+    fun d(message: Any, useCrashlyticsLog: Boolean = false, tag: String? = null) {
+        writeLog(LogLevel.DEBUG, message, null, useCrashlyticsLog, tag)
     }
 
-    fun i(message: Any, logEvent: Boolean = false, tag: String? = null) {
-        writeLog(LogLevel.INFO, message, null, logEvent, tag)
+    /**
+     * Write information message
+     *
+     * @param message A message to be logged
+     * @param useCrashlyticsLog - If the parameter is `true`, the message will also be logged via `crashlyticsLogger`
+     * @param tag Used to identify the source of a log message. If the parameter is `null`, the name of the calling function will be used
+     */
+    fun i(message: Any, useCrashlyticsLog: Boolean = false, tag: String? = null) {
+        writeLog(LogLevel.INFO, message, null, useCrashlyticsLog, tag)
     }
 
-    fun w(message: Any, logEvent: Boolean = false, tag: String? = null) {
-        writeLog(LogLevel.WARN, message, null, logEvent, tag)
+    /**
+     * Write warning message
+     *
+     * @param message A message to be logged
+     * @param useCrashlyticsLog - If the parameter is `true`, the message will also be logged via `crashlyticsLogger`
+     * @param tag Used to identify the source of a log message. If the parameter is `null`, the name of the calling function will be used
+     */
+    fun w(message: Any, useCrashlyticsLog: Boolean = false, tag: String? = null) {
+        writeLog(LogLevel.WARN, message, null, useCrashlyticsLog, tag)
     }
 
-    fun e(message: Any, logEvent: Boolean = false, tag: String? = null) {
-        writeLog(LogLevel.ERROR, message, null, logEvent, tag)
+    fun e(message: Any, useCrashlyticsLog: Boolean = false, tag: String? = null) {
+        writeLog(LogLevel.ERROR, message, null, useCrashlyticsLog, tag)
     }
 
-    fun e(message: Any, exception: Throwable? = null, logEvent: Boolean = false, tag: String? = null) {
-        writeLog(LogLevel.ERROR, message, exception, logEvent, tag)
+    fun e(message: Any, exception: Throwable? = null, useCrashlyticsLog: Boolean = false, tag: String? = null) {
+        writeLog(LogLevel.ERROR, message, exception, useCrashlyticsLog, tag)
     }
 
-    fun a(message: Any, logEvent: Boolean = false, tag: String? = null) {
-        writeLog(LogLevel.ASSERT, message, null, logEvent, tag)
+    fun a(message: Any, useCrashlyticsLog: Boolean = false, tag: String? = null) {
+        writeLog(LogLevel.ASSERT, message, null, useCrashlyticsLog, tag)
     }
 
     /**
@@ -158,24 +199,34 @@ class Logger {
         fileHandler?.close()
     }
 
-    private fun writeLog(logLevel: LogLevel, message: Any, exception: Throwable?, logEvent: Boolean, customTag: String? = null) {
+    private fun writeLog(logLevel: LogLevel, message: Any, exception: Throwable?, useCrashlyticsLog: Boolean, customTag: String? = null) {
         if (isDestroyed || logLevel.code < this.logLevel.code) return
         val tag = if (customTag != null) {
             customTag
         } else {
-            val element = Thread.currentThread().stackTrace[5] // Magic number ? Why 5 ?
+            val stackTrace = Thread.currentThread().stackTrace
+            val element = stackTrace[5] // It looks like a magic number, but if you look into it, it's not
+//            The function from which the logger was called is always the fifth. Below is an example stacktrace:
+//            0  "dalvik.system.VMStack.getThreadStackTrace(Native Method)"
+//            1  "java.lang.Thread.getStackTrace(Thread.java:1730)"
+//            2  "ru.angryrobot.logger.Logger.writeLog(Logger.kt:166)"
+//            3  "ru.angryrobot.logger.Logger.e(Logger.kt:146)"
+//            4  "ru.angryrobot.logger.Logger.e$default(Logger.kt:145)"
+//     ---->  5  "ru.angryrobot.logger.demo.MainActivity.someFunction(MainActivity.kt:72)"
+//            6  "ru.angryrobot.logger.demo.MainActivity.onCreate$lambda-5(MainActivity.kt:57)"
+//            N  ...
             "[${element.className.split(".").last()}.${element.methodName}]"
         }
 
         if (writeToLogcat) {
             Log.println(logLevel.code, tag, message.toString())
-            exception?.printStackTrace()
+            exception?.printStackTrace() //TODO - печатает с тем логлевелом всегда
         }
 
-        if (logEvent) {
-            firebaseLogger?.invoke("${logLevel.string}/$tag $message")
+        if (useCrashlyticsLog) {
+            crashlyticsLogger?.invoke("${logLevel.string}/$tag $message")
             if (exception != null) {
-                exceptionLogger?.invoke(exception)
+                crashlyticsExceptionLogger?.invoke(exception)
             }
         }
 
@@ -202,6 +253,9 @@ class Logger {
     }
 }
 
+/**
+ * Configuration used for logging to files
+ */
 class LoggerSettings(
 
     /**
