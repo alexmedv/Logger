@@ -21,21 +21,15 @@ package ru.angryrobot.logger
  * Посмотреть как там в джаве оно будет работать
  * Подумать насчет многопоточности и работы из разных процессов одного приложения
  */
-import android.annotation.SuppressLint
 import android.os.Process
-import android.os.SystemClock
 import android.util.Log
-import androidx.annotation.IntRange
-import java.io.*
-import java.lang.IllegalStateException
-import java.text.DateFormat
-import java.text.SimpleDateFormat
+import java.io.File
+import java.io.PrintWriter
+import java.io.StringWriter
 import java.util.*
 import java.util.logging.FileHandler
 import java.util.logging.Level
 import java.util.logging.LogRecord
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 
 /**
  * Simple and easy to use (according to the author) logger for android.
@@ -60,7 +54,7 @@ class Logger {
     var writeToLogcat = true
 
     /**
-     * If enabled, logging to files is allowed (`settings` must be non null)
+     * If enabled, logging to files is allowed ([settings] must be non null)
      *
      * @see settings
      */
@@ -110,10 +104,23 @@ class Logger {
      */
     val settings: LoggerSettings?
 
+    /**
+     * Create a logger with default settings (`LogCat` only)
+     */
     constructor() : this(null)
 
+    /**
+     * Create a logger that writes to files (with default settings) and `LogCat`
+     *
+     * @param logsDir The directory where the logs will be stored (it will be created if it does not exist)
+     */
     constructor(logsDir: File) : this(LoggerSettings(logsDir))
 
+    /**
+     * Create a logger with specific settings
+     *
+     * @param settings Configuration used for logging to files
+     */
     constructor(settings: LoggerSettings?) {
         this.settings = settings
         fileHandler = if (settings != null) {
@@ -136,7 +143,7 @@ class Logger {
      * Write a verbose message
      *
      * @param message A message to be logged
-     * @param useCrashlyticsLog If the parameter is `true`, the message will also be logged via `crashlyticsLogger`
+     * @param useCrashlyticsLog If the parameter is `true`, the message will also be logged via [crashlyticsLogger]
      * @param tag Used to identify the source of a log message. If the parameter is `null`, the name of the calling function will be used
      */
     fun v(message: Any, useCrashlyticsLog: Boolean = false, tag: String? = null) {
@@ -147,7 +154,7 @@ class Logger {
      * Write a debug message
      *
      * @param message A message to be logged
-     * @param useCrashlyticsLog If the parameter is `true`, the message will also be logged via `crashlyticsLogger`
+     * @param useCrashlyticsLog If the parameter is `true`, the message will also be logged via [crashlyticsLogger]
      * @param tag Used to identify the source of a log message. If the parameter is `null`, the name of the calling function will be used
      */
     fun d(message: Any, useCrashlyticsLog: Boolean = false, tag: String? = null) {
@@ -158,7 +165,7 @@ class Logger {
      * Write an information message
      *
      * @param message A message to be logged
-     * @param useCrashlyticsLog If the parameter is `true`, the message will also be logged via `crashlyticsLogger`
+     * @param useCrashlyticsLog If the parameter is `true`, the message will also be logged via [crashlyticsLogger]
      * @param tag Used to identify the source of a log message. If the parameter is `null`, the name of the calling function will be used
      */
     fun i(message: Any, useCrashlyticsLog: Boolean = false, tag: String? = null) {
@@ -169,7 +176,7 @@ class Logger {
      * Write a warning message
      *
      * @param message A message to be logged
-     * @param useCrashlyticsLog If the parameter is `true`, the message will also be logged via `crashlyticsLogger`
+     * @param useCrashlyticsLog If the parameter is `true`, the message will also be logged via [crashlyticsLogger]
      * @param tag Used to identify the source of a log message. If the parameter is `null`, the name of the calling function will be used
      */
     fun w(message: Any, useCrashlyticsLog: Boolean = false, tag: String? = null) {
@@ -180,7 +187,7 @@ class Logger {
      * Write an error message
      *
      * @param message A message to be logged
-     * @param useCrashlyticsLog If the parameter is `true`, the message will also be logged via `crashlyticsLogger`
+     * @param useCrashlyticsLog If the parameter is `true`, the message will also be logged via [crashlyticsLogger]
      * @param tag Used to identify the source of a log message. If the parameter is `null`, the name of the calling function will be used
      */
     fun e(message: Any, useCrashlyticsLog: Boolean = false, tag: String? = null) {
@@ -191,7 +198,7 @@ class Logger {
      * Write an error message and exception
      *
      * @param message A message to be logged
-     * @param useCrashlyticsLog If the parameter is `true`, the message will also be logged via `crashlyticsLogger`
+     * @param useCrashlyticsLog If the parameter is `true`, the message will also be logged via [crashlyticsLogger]
      * @param tag Used to identify the source of a log message. If the parameter is `null`, the name of the calling function will be used
      * @param exception An exception to be logged
      * @param useCrashlyticsExceptionLogger If the parameter is `true`, the exception will also be logged via `crashlyticsExceptionLogger`
@@ -203,7 +210,7 @@ class Logger {
      * Write an assert message
      *
      * @param message A message to be logged
-     * @param useCrashlyticsLog If the parameter is `true`, the message will also be logged via `crashlyticsLogger`
+     * @param useCrashlyticsLog If the parameter is `true`, the message will also be logged via [crashlyticsLogger]
      * @param tag Used to identify the source of a log message. If the parameter is `null`, the name of the calling function will be used
      */
     fun a(message: Any, useCrashlyticsLog: Boolean = false, tag: String? = null) {
@@ -225,15 +232,16 @@ class Logger {
             customTag
         } else {
             val stackTrace = Thread.currentThread().stackTrace
-            val element = stackTrace[5] // It looks like a magic number, but if you look into it, it's not
+            val element = stackTrace[6] // It looks like a magic number, but if you look into it, it's not
 //            The function from which the logger was called is always the fifth. Below is an example stacktrace:
 //            0  "dalvik.system.VMStack.getThreadStackTrace(Native Method)"
-//            1  "java.lang.Thread.getStackTrace(Thread.java:1730)"
-//            2  "ru.angryrobot.logger.Logger.writeLog(Logger.kt:166)"
-//            3  "ru.angryrobot.logger.Logger.e(Logger.kt:146)"
-//            4  "ru.angryrobot.logger.Logger.e$default(Logger.kt:145)"
-//     ---->  5  "ru.angryrobot.logger.demo.MainActivity.someFunction(MainActivity.kt:72)"
-//            6  "ru.angryrobot.logger.demo.MainActivity.onCreate$lambda-5(MainActivity.kt:57)"
+//            1  "java.lang.Thread.getStackTrace(Thread.java:1724)"
+//            2  "ru.angryrobot.logger.Logger.writeLog(Logger.kt:234)"
+//            3  "ru.angryrobot.logger.Logger.writeLog$default(Logger.kt:228)"
+//            4  "ru.angryrobot.logger.Logger.e(Logger.kt:207)"
+//            5  "ru.angryrobot.logger.Logger.e$default(Logger.kt:206)"
+//   ---->    6  "ru.angryrobot.logger.demo.MainActivity.someFunction(MainActivity.kt:70)"
+//            7  "ru.angryrobot.logger.demo.MainActivity.onCreate$lambda-5(MainActivity.kt:55)"
 //            N  ...
             "[${element.className.split(".").last()}.${element.methodName}]"
         }
@@ -269,7 +277,7 @@ class Logger {
 
     /**
      * Get the stack trace from a Throwable as a String.
-     * @param throwable  the `Throwable` to be examined
+     * @param throwable  the [Throwable] to be examined
      * @return the stack trace as generated by the exception's `printStackTrace(PrintWriter)` method
      */
     private fun getStackTrace(throwable: Throwable) = StringWriter().use { sw ->

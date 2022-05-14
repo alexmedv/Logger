@@ -23,7 +23,14 @@ import java.lang.IllegalStateException
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
-fun Logger.createLogBundle(zipFile: File) {
+/**
+ * Compress all log files to zip archive
+ *
+ * @param zipFile Path to the output ZIP file. The file will be overwritten if it exists.
+ *
+ * @throws IllegalStateException if logger is not configured to write logs to the files
+ */
+fun Logger.compressLogs(zipFile: File) {
     if (settings == null) throw IllegalStateException("Logger is not configured to write logs to the files")
     val files = settings.logsDir.listFiles() ?: emptyArray()
     val zipOutput = ZipOutputStream(FileOutputStream(zipFile))
@@ -36,12 +43,4 @@ fun Logger.createLogBundle(zipFile: File) {
         inputStream.close()
     }
     zipOutput.close()
-}
-
-
-fun Logger.measure(msg: String = "Execution time", logEvent: Boolean = false, tag: String? = null, block: () -> Unit) {
-    val startTime = SystemClock.elapsedRealtime()
-    block()
-    val result = SystemClock.elapsedRealtime() - startTime
-    w("$msg: $result msec", logEvent, tag)
 }
