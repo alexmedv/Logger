@@ -1,4 +1,4 @@
-#:memo:EasyLogger
+# :memo: EasyLogger
 Logging is one of the most important tools for finding bugs in an application. Android has a `LogCat` for this purpose, but it is often not enough. `LogCat` is only convenient for the developer, app users don't know what it is at all. So the app should log the data into files, which will then be analyzed by the developer in case of failures.
 
 ## :wrench: Installation
@@ -14,12 +14,12 @@ dependencies {
 ## :gear: Logger configuration
 //TODO
 
-##:rocket:Multiprocess applications
+## :rocket: Multiprocess applications
 As you know, android allows you to run application components in a separate process (not to be confused with threads). This is quite rarely used by developers, but in this case there are some nuances of using the logger. The main problem is that if two processes write logs in the same directory, it may cause data corruption. There are two ways to solve this problem:
 1) Allow logging only from one process
 2) Log data from each process to its own directory
 
-##:balance_scale:License
+## :balance_scale: License
 ```
   Copyright 2022 Alexander Medvedev
   Licensed under the Apache License, Version 2.0 (the "License");
