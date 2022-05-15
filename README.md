@@ -12,7 +12,32 @@ dependencies {
 
 
 ## :gear: Logger configuration
+The logger can be created with default parameters, in which case only the output to the `LogCat` will work. In other words, the logger works as a wrapper over the `LogCat`:
+```kotlin
+val log = Logger()
+log.d("Debug message")
+```
+If you want to write the logs to files, you must at least specify the path to the logs directory:
+```kotlin
+val log = Logger(File(context.filesDir, "logs"))
+log.d("write to files and LogCat")
+```
+If more fine-grained logging settings are needed, they can be set using the `LoggerSettings` class:
+```kotlin
+val log = Logger(
+    LoggerSettings(
+        logsDir = File(context.filesDir, "logs"), // Logs directory
+        logFilesSize = 1024 * 100, // Max file size (100 kBytes)
+        logFilesCount = 4, // Max number of log files in the directory
+        logFilesName = "my_log_file.txt" // LogFiles name
+    )
+)
+```
+## :technologist: Usage
 //TODO
+
+## :robot: Integration with crash reporter systems (Firebase etc)
+//TODO 
 
 ## :rocket: Multiprocess applications
 As you know, android allows you to run application components in a separate process (not to be confused with threads). This is quite rarely used by developers, but in this case there are some nuances of using the logger. The main problem is that if two processes write logs in the same directory, it may cause data corruption. There are two ways to solve this problem:
