@@ -15,11 +15,14 @@
  */
 package ru.angryrobot.logger
 
-import android.os.SystemClock
+import android.app.ActivityManager
+import android.app.Application
+import android.app.Application.getProcessName
+import android.os.Build
+import android.os.Process
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.lang.IllegalStateException
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -43,4 +46,26 @@ fun Logger.compressLogs(zipFile: File) {
         inputStream.close()
     }
     zipOutput.close()
+}
+
+/**
+ * Returns the name of the current process. A package's default process name
+ * is the same as its package name. Non-default processes will look like
+ * "$PACKAGE_NAME:$NAME", where $NAME corresponds to an android:process
+ * attribute within AndroidManifest.xml.
+ */
+fun Application.getProcessNameCompat(): String {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        return getProcessName()
+    } else {
+        val myPid = Process.myPid()
+        val activityManager = getSystemService(Application.ACTIVITY_SERVICE) as ActivityManager
+        val runningAppProcesses = activityManager.runningAppProcesses
+        for (processInfo in runningAppProcesses) {
+            if (processInfo.pid == myPid) {
+                return processInfo.processName
+            }
+        }
+        throw RuntimeException("Unable to get process name")
+    }
 }

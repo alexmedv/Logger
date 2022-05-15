@@ -1,28 +1,29 @@
 package ru.angryrobot.logger.demo
 
-import android.os.Handler
-import android.os.Looper
+import android.content.Context
 import ru.angryrobot.logger.Logger
+import ru.angryrobot.logger.LoggerSettings
 import java.io.File
-
 
 class Application : android.app.Application() {
 
-//    val myLogger by lazy { Logger(File(filesDir, "logs")) }
-
-    val handler = Handler(Looper.getMainLooper())
-
-    val runnable = object : Runnable {
-        override fun run() {
-//            myLogger.w("Hello from other!")
-            handler.postDelayed(this, 3000)
-        }
-
-    }
+    lateinit var log: Logger
 
     override fun onCreate() {
         super.onCreate()
-        handler.post(runnable)
+        log = Logger(
+            LoggerSettings(
+                logsDir = File(filesDir, "logs"),
+                logFilesSize = 1024 * 100,
+                logFilesCount = 4,
+                logFilesName = "my_log_file.txt"
+            )
+        )
     }
 
 }
+
+/**
+ * Allows you to get the logger wherever there is context
+ */
+fun Context.getLogger() = (applicationContext as Application).log
