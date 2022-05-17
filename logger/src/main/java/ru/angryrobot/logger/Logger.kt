@@ -15,12 +15,6 @@
  */
 package ru.angryrobot.logger
 
-/***
- * Добавить принтТехникалДата и всякие интересные штуки для логирования
- * Добавить логирование номера линии
- * Посмотреть как там в джаве оно будет работать
- * Подумать насчет многопоточности и работы из разных процессов одного приложения
- */
 import android.os.Process
 import android.util.Log
 import java.io.File
@@ -204,7 +198,7 @@ class Logger {
      * @param useCrashlyticsExceptionLogger If the parameter is `true`, the exception will also be logged via `crashlyticsExceptionLogger`
      */
     fun e(message: Any, exception: Throwable? = null, tag: String? = null, useCrashlyticsExceptionLogger:Boolean = false, useCrashlyticsLog: Boolean = false) {
-        writeLog(LogLevel.ERROR, message, useCrashlyticsLog, tag, exception)
+        writeLog(LogLevel.ERROR, message, useCrashlyticsLog, tag, exception, useCrashlyticsExceptionLogger)
     }
     /**
      * Write an assert message
@@ -246,6 +240,10 @@ class Logger {
             "[${element.className.split(".").last()}.${element.methodName}]"
         }
 
+        if (useCrashlyticsExceptionLogger && exception != null) {
+            crashlyticsExceptionLogger?.invoke(exception)
+        }
+
         if (writeToLogcat) {
             Log.println(logLevel.code, tag, message.toString())
             exception?.printStackTrace() //TODO - печатает с тем логлевелом всегда
@@ -253,9 +251,6 @@ class Logger {
 
         if (useCrashlyticsLog) {
             crashlyticsLogger?.invoke("${logLevel.string}/$tag $message")
-            if (exception != null) {
-                crashlyticsExceptionLogger?.invoke(exception)
-            }
         }
 
         if (writeToFile) {
