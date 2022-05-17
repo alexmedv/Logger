@@ -63,7 +63,28 @@ log.writeToLogcat = false // disable logging to LogCat
 log.writeToFile = false  // disable logging to files
 ```
 ## :robot: Integration with crash reporter systems (Firebase etc)
-//TODO 
+When an error occurs, sometimes it is important not only to log it, but also to send a stackrace to a system like Firebase Crashlytics. To reduce the amount of code, it is enough to set the `useCrashlyticsExceptionLogger` parameter to `true`:
+```kotlin
+val exception = IOException()
+log.e("Something went wrong :(", exception, useCrashlyticsExceptionLogger = true)
+```
+In this case the `crashlyticsExceptionLogger` function will be called. Inside the function, you need to call the code which will be executed if the `useCrashlyticsExceptionLogger` parameter is `true`. Usually, the function looks like this:
+```kotlin
+log.crashlyticsExceptionLogger = {
+  FirebaseCrashlytics.getInstance().recordException(it)
+}
+```
+Also, every logging method has the `useCrashlyticsLog` parameter.  If you pass `true` to it, the `crashlyticsLogger` function will be called. 
+```kotlin
+log.w("Important message for Firebase Crashlytics", useCrashlyticsLog = true)
+```
+It's needed to give more context for the events leading up to a crash. If you are using Firebase, then the function will look like this:
+```kotlin
+log.crashlyticsLogger = {
+  FirebaseCrashlytics.getInstance().log(it)
+}
+```
+:warning: `crashlyticsExceptionLogger` and `crashlyticsLogger` are optional functions, you may not use them.
 
 ## :rocket: Multiprocess applications
 As you know, android allows you to run application components in a separate process (not to be confused with threads). This is quite rarely used by developers, but in this case there are some nuances of using the logger. The main problem is that if two processes write logs in the same directory, it may cause data corruption. There are two ways to solve this problem:
