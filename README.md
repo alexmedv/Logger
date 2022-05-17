@@ -34,8 +34,34 @@ val log = Logger(
 )
 ```
 ## :technologist: Usage
-//TODO
-
+To log messages, simply call a function with the appropriate logging level. You no longer need to pass the `tag` every time, the logger will generate it itself:
+```kotlin
+log.i("Hello world")
+```
+At the same time it is possible to pass your own tag:
+```kotlin
+log.d("\'Debug\' log entry with custom tag", tag = "SomeTag")
+```
+For error messages there is an option to log the stacktrace:
+```kotlin
+val exception = IOException()
+log.e("Something went wrong :(", exception)
+```
+To limit the flow of messages into the logs, you can increase the logging level:
+```kotlin
+log.logLevel = LogLevel.INFO
+log.v("verbose message") // This will not be logged
+log.d("debug message")   // This will not be logged either
+log.i("info message")    // This message and others with a higher level will be logged
+log.w("warning message")
+log.e("error message")
+log.a("assert message")
+```
+At any time logging to files and `LogCat` can be completely paused and resumed:
+```kotlin
+log.writeToLogcat = false // disable logging to LogCat
+log.writeToFile = false  // disable logging to files
+```
 ## :robot: Integration with crash reporter systems (Firebase etc)
 //TODO 
 
