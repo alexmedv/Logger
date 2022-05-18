@@ -84,13 +84,20 @@ log.crashlyticsLogger = {
   FirebaseCrashlytics.getInstance().log(it)
 }
 ```
-:warning: `crashlyticsExceptionLogger` and `crashlyticsLogger` are optional functions, you may not use them.
+Note that `crashlyticsExceptionLogger` and `crashlyticsLogger` are optional functions, you may not use them.
 
 ## :rocket: Multiprocess applications
-As you know, android allows you to run application components in a separate process (not to be confused with threads). This is quite rarely used by developers, but in this case there are some nuances of using the logger. The main problem is that if two processes write logs in the same directory, it may cause data corruption. There are two ways to solve this problem:
-1) Allow logging only from one process
-2) Log data from each process to its own directory
+As you know, android allows you to run application components in a separate process (not to be confused with threads). This is quite rarely used by developers, but in this case there are some nuances of using the logger. The main problem is that if two processes write logs in the same directory, it may cause data corruption. So each process must write logs in its own directory. The [LoggerExtensions.kt](/logger/src/main/java/ru/angryrobot/logger/LoggerExtensions.kt)  file has a function that allows you to get the name of the current process. Using it, you can configure the logger correctly:
 
+```kotlin
+val procName =  getProcessNameCompat()
+val logDirPrefix = if (packageName == procName) {
+    ""
+} else {
+    procName.replace("$packageName:", "")
+}
+val log = Logger(File(filesDir, "$logDirPrefix-logs"))
+```
 ## :balance_scale: License
 ```
   Copyright 2022 Alexander Medvedev
