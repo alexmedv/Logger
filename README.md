@@ -1,9 +1,6 @@
 <h1 align="center">
     :memo: The logger
-  <img src="https://user-images.githubusercontent.com/2558551/169012618-699d9745-1e1a-44a9-8382-e22785c44820.jpg" alt="Logo"/>
-
-
-
+  <img src="https://user-images.githubusercontent.com/2558551/169022156-c8e3c713-3d50-4cca-8777-a1193fbb06f9.jpg" alt="Logo"/>
 </h1>
 
 Logging is one of the most important tools for finding bugs in an application. Android has a `LogCat` for this purpose, but it is often not enough. `LogCat` is only convenient for the developer, app users don't know what it is at all. So the app should log the data into files, which will then be analyzed by the developer in case of failures. Key features of this logger:
