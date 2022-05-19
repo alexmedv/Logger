@@ -226,17 +226,8 @@ class Logger {
             customTag
         } else {
             val stackTrace = Thread.currentThread().stackTrace
-            val element = stackTrace[6] // It looks like a magic number, but if you look into it, it's not
-//            The function from which the logger was called is always the fifth. Below is an example stacktrace:
-//            0  "dalvik.system.VMStack.getThreadStackTrace(Native Method)"
-//            1  "java.lang.Thread.getStackTrace(Thread.java:1724)"
-//            2  "ru.angryrobot.logger.Logger.writeLog(Logger.kt:234)"
-//            3  "ru.angryrobot.logger.Logger.writeLog$default(Logger.kt:228)"
-//            4  "ru.angryrobot.logger.Logger.e(Logger.kt:207)"
-//            5  "ru.angryrobot.logger.Logger.e$default(Logger.kt:206)"
-//   ---->    6  "ru.angryrobot.logger.demo.MainActivity.someFunction(MainActivity.kt:70)"
-//            7  "ru.angryrobot.logger.demo.MainActivity.onCreate$lambda-5(MainActivity.kt:55)"
-//            N  ...
+            val index = stackTrace.indexOfLast { it.className == this::class.qualifiedName } + 1
+            val element = stackTrace[index]
             "[${element.className.split(".").last()}.${element.methodName}]"
         }
 
@@ -246,7 +237,7 @@ class Logger {
 
         if (writeToLogcat) {
             Log.println(logLevel.code, tag, message.toString())
-            exception?.printStackTrace() //TODO - печатает с тем логлевелом всегда
+            exception?.printStackTrace()
         }
 
         if (useCrashlyticsLog) {
