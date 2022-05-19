@@ -13,7 +13,7 @@ Logging is one of the most important tools for finding bugs in an application. A
 Add the following dependency to your `build.gradle` file:
 ```groovy
 dependencies {
-  implementation 'com.github.alexmedv:Logger:1.0.0'
+  implementation 'com.github.alexmedv:Logger:1.0.1'
 }
 ```
 :warning: Don't forget to add the JitPack maven repository to the list of repositories: 
