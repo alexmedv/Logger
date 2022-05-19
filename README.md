@@ -109,7 +109,9 @@ val log = Logger(File(filesDir, "$logDirPrefix-logs"))
 
 ## :sparkles: Demo app
 In the demo application you can find an example of how to use the logger and try all its functions
-![Demo App](https://user-images.githubusercontent.com/2558551/169234057-6f4a2644-266c-4cb2-9130-6e852ff96b4a.png)
+<p align="center">
+    <img src="https://user-images.githubusercontent.com/2558551/169234057-6f4a2644-266c-4cb2-9130-6e852ff96b4a.png" width="65%">
+</p>
 
 ## :balance_scale: License
 ```
