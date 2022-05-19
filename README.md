@@ -16,8 +16,13 @@ dependencies {
   implementation 'com.github.alexmedv:Logger:1.0.0'
 }
 ```
-:warning: Don't forget to add the JitPack maven repository to the list of repositories: `maven { url "https://jitpack.io" }`
-
+:warning: Don't forget to add the JitPack maven repository to the list of repositories: 
+```groovy
+repositories {
+    // other repositories
+    maven { url "https://jitpack.io" }
+}
+```
 
 ## :gear: Logger configuration
 The logger can be created with default parameters, in which case only the output to the `LogCat` will work. In other words, the logger works as a wrapper over the `LogCat`:
