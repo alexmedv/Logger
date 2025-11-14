@@ -97,13 +97,6 @@
             android:checked="true"
             android:text="Write to files" />
 
-        <Button
-            android:id="@+id/destroy"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Destroy logger"
-            android:textColor="#000000"
-            app:backgroundTint="#E4E1E3" />
     </LinearLayout>
 
 </LinearLayout>

@@ -22,6 +22,7 @@ import java.io.PrintWriter
 import java.io.StringWriter
 import java.util.*
 import java.util.logging.FileHandler
+import java.util.logging.Formatter
 import java.util.logging.Level
 import java.util.logging.LogRecord
 
@@ -32,7 +33,6 @@ import java.util.logging.LogRecord
  * - Configurable log level
  * - Integration with crash reporter systems
  * - Writing log to `LogCat` and files (with rotation)
- * - Automatically generated tag (for `LogCat`)
  *
  *  @see <a href="https://github.com/alexmedv/Logger">More information and examples</a>
  *
@@ -42,49 +42,10 @@ import java.util.logging.LogRecord
 class Logger {
 
     /**
-     * If enabled, logging to `LogCat` is allowed.
-     * Typical use case - disable `LogCat` logging in a release build
-     */
-    var writeToLogcat = true
-
-    /**
-     * If enabled, logging to files is allowed ([settings] must be non null)
-     *
-     * @see settings
-     */
-    var writeToFile = true
-        set(value) {
-            if (value && settings == null) throw IllegalStateException("Logger is not configured to write logs to the files")
-            field = value
-        }
-
-    /**
      * You can control how many messages appear in the logs by setting the `logLevel`.
      * For example, if you want to see warnings and more serious events, set this parameter to `LogLevel.WARN`
      */
     var logLevel: LogLevel = LogLevel.VERBOSE
-
-    /**
-     * Used for integration with crash reporter systems like Firebase Crashlytics.
-     * Typical use case, call `FirebaseCrashlytics.getInstance().log(message)` in this function.
-     * It's needed to give more context for the events leading up to a crash.
-     */
-    var crashlyticsLogger: ((String) -> Unit)? = null
-
-    /**
-     * Used for integration with crash reporter systems like Firebase Crashlytics.
-     * Typical use case, call `FirebaseCrashlytics.getInstance().recordException(throwable)` in this function.
-     * It's needed to log non-fatal exceptions in the app.
-     */
-    var crashlyticsExceptionLogger: ((Throwable) -> Unit)? = null
-
-    /**
-     * If true - the logger is destroyed
-     *
-     * @see destroy()
-     */
-    var isDestroyed = false
-        private set
 
     private val fileHandler: FileHandler?
 
@@ -96,42 +57,54 @@ class Logger {
     /**
      * Settings for logging to files
      */
-    val settings: LoggerSettings?
+    val settings: LoggerSettings
 
     /**
-     * Create a logger with default settings (`LogCat` only)
+     * Root logger
      */
-    constructor() : this(null)
+    private val rootLogger: Logger?
 
     /**
-     * Create a logger that writes to files (with default settings) and `LogCat`
-     *
-     * @param logsDir The directory where the logs will be stored (it will be created if it does not exist)
+     * tag to be used for this logger
      */
-    constructor(logsDir: File) : this(LoggerSettings(logsDir))
+    var tag: String = "[RootLogger]"
 
     /**
      * Create a logger with specific settings
      *
      * @param settings Configuration used for logging to files
      */
-    constructor(settings: LoggerSettings?) {
+    constructor(settings: LoggerSettings) {
         this.settings = settings
-        fileHandler = if (settings != null) {
-            if (!settings.logsDir.exists()) settings.logsDir.mkdirs()
-            FileHandler(
-                File(settings.logsDir.absolutePath, settings.logFilesName).absolutePath,
-                settings.logFilesSize, settings.logFilesCount, true
-            ).apply {
-                formatter = object : java.util.logging.Formatter() {
-                    override fun format(record: LogRecord) = record.message
-                }
+        if (!settings.logsDir.exists()) settings.logsDir.mkdirs()
+        fileHandler = FileHandler(
+            File(settings.logsDir.absolutePath, settings.logFilesName).absolutePath,
+            settings.logFilesSize, settings.logFilesCount, true
+        ).apply {
+            formatter = object : Formatter() {
+                override fun format(record: LogRecord) = record.message
             }
-        } else {
-            writeToFile = false
-            null
         }
+        this.rootLogger = null
     }
+
+    /**
+     * Create a new logger with custom tag
+     * @param logger root logger
+     * @param tag tag
+     */
+    private constructor(logger: Logger, tag: String) {
+        fileHandler = null
+        settings = logger.settings
+        this.rootLogger = logger.rootLogger ?: logger
+        this.tag = tag
+    }
+
+    /**
+     * Create a new logger with custom tag
+     * @param tag tag
+     */
+    fun newLogger(tag: String)  = Logger(this, tag)
 
     /**
      * Write a verbose message
@@ -140,7 +113,7 @@ class Logger {
      * @param useCrashlyticsLog If the parameter is `true`, the message will also be logged via [crashlyticsLogger]
      * @param tag Used to identify the source of a log message. If the parameter is `null`, the name of the calling function will be used
      */
-    fun v(message: Any, useCrashlyticsLog: Boolean = false, tag: String? = null) {
+    fun v(message: Any, useCrashlyticsLog: Boolean = true, tag: String = this.tag) {
         writeLog(LogLevel.VERBOSE, message,  useCrashlyticsLog, tag)
     }
 
@@ -151,7 +124,7 @@ class Logger {
      * @param useCrashlyticsLog If the parameter is `true`, the message will also be logged via [crashlyticsLogger]
      * @param tag Used to identify the source of a log message. If the parameter is `null`, the name of the calling function will be used
      */
-    fun d(message: Any, useCrashlyticsLog: Boolean = false, tag: String? = null) {
+    fun d(message: Any, useCrashlyticsLog: Boolean = true, tag: String = this.tag) {
         writeLog(LogLevel.DEBUG, message,  useCrashlyticsLog, tag)
     }
 
@@ -162,7 +135,7 @@ class Logger {
      * @param useCrashlyticsLog If the parameter is `true`, the message will also be logged via [crashlyticsLogger]
      * @param tag Used to identify the source of a log message. If the parameter is `null`, the name of the calling function will be used
      */
-    fun i(message: Any, useCrashlyticsLog: Boolean = false, tag: String? = null) {
+    fun i(message: Any, useCrashlyticsLog: Boolean = true, tag: String = this.tag) {
         writeLog(LogLevel.INFO, message, useCrashlyticsLog, tag)
     }
 
@@ -173,7 +146,7 @@ class Logger {
      * @param useCrashlyticsLog If the parameter is `true`, the message will also be logged via [crashlyticsLogger]
      * @param tag Used to identify the source of a log message. If the parameter is `null`, the name of the calling function will be used
      */
-    fun w(message: Any, useCrashlyticsLog: Boolean = false, tag: String? = null) {
+    fun w(message: Any, useCrashlyticsLog: Boolean = true, tag: String = this.tag) {
         writeLog(LogLevel.WARN, message, useCrashlyticsLog, tag)
     }
 
@@ -184,7 +157,7 @@ class Logger {
      * @param useCrashlyticsLog If the parameter is `true`, the message will also be logged via [crashlyticsLogger]
      * @param tag Used to identify the source of a log message. If the parameter is `null`, the name of the calling function will be used
      */
-    fun e(message: Any, useCrashlyticsLog: Boolean = false, tag: String? = null) {
+    fun e(message: Any, useCrashlyticsLog: Boolean = true, tag: String = this.tag) {
         writeLog(LogLevel.ERROR, message, useCrashlyticsLog, tag)
     }
 
@@ -197,7 +170,7 @@ class Logger {
      * @param exception An exception to be logged
      * @param useCrashlyticsExceptionLogger If the parameter is `true`, the exception will also be logged via `crashlyticsExceptionLogger`
      */
-    fun e(message: Any, exception: Throwable? = null, tag: String? = null, useCrashlyticsExceptionLogger:Boolean = false, useCrashlyticsLog: Boolean = false) {
+    fun e(message: Any, exception: Throwable? = null, tag: String = this.tag, useCrashlyticsExceptionLogger:Boolean = false, useCrashlyticsLog: Boolean = true) {
         writeLog(LogLevel.ERROR, message, useCrashlyticsLog, tag, exception, useCrashlyticsExceptionLogger)
     }
     /**
@@ -207,44 +180,34 @@ class Logger {
      * @param useCrashlyticsLog If the parameter is `true`, the message will also be logged via [crashlyticsLogger]
      * @param tag Used to identify the source of a log message. If the parameter is `null`, the name of the calling function will be used
      */
-    fun a(message: Any, useCrashlyticsLog: Boolean = false, tag: String? = null) {
+    fun a(message: Any, useCrashlyticsLog: Boolean = true, tag: String = this.tag) {
         writeLog(LogLevel.ASSERT, message, useCrashlyticsLog, tag, null)
     }
 
-    /**
-     * Close all the files and stop writing logs to `LogCat`. Call this function if you don't need this logger anymore
-     */
-    fun destroy() {
-        isDestroyed = true
-        fileHandler?.close()
-    }
-
-    private fun writeLog(logLevel: LogLevel, message: Any, useCrashlyticsLog: Boolean, customTag: String? = null,
+    private fun writeLog(logLevel: LogLevel, message: Any, useCrashlyticsLog: Boolean, tag: String,
                          exception: Throwable? = null, useCrashlyticsExceptionLogger : Boolean = false) {
-        if (isDestroyed || logLevel.code < this.logLevel.code) return
-        val tag = if (customTag != null) {
-            customTag
-        } else {
-            val stackTrace = Thread.currentThread().stackTrace
-            val index = stackTrace.indexOfLast { it.className == this::class.qualifiedName } + 1
-            val element = stackTrace[index]
-            "[${element.className.split(".").last()}.${element.methodName}]"
+
+        if (logLevel.code < this.logLevel.code) return
+
+        if (rootLogger != null) {
+            rootLogger.writeLog(logLevel, message, useCrashlyticsLog, tag, exception, useCrashlyticsExceptionLogger)
+            return
         }
 
         if (useCrashlyticsExceptionLogger && exception != null) {
-            crashlyticsExceptionLogger?.invoke(exception)
+            settings.crashlyticsExceptionLogger?.invoke(exception)
         }
 
-        if (writeToLogcat) {
+        if (settings.writeToLogcat) {
             Log.println(logLevel.code, tag, message.toString())
             exception?.printStackTrace()
         }
 
         if (useCrashlyticsLog) {
-            crashlyticsLogger?.invoke("${logLevel.string}/$tag $message")
+            settings.crashlyticsLogger?.invoke("${logLevel.string}/$tag $message")
         }
 
-        if (writeToFile) {
+        if (settings.writeToFile) {
             writeToFile(logLevel, tag, message.toString())
             if (exception != null) {
                 val exceptionString = getStackTrace(exception)
@@ -254,10 +217,8 @@ class Logger {
     }
 
     private fun writeToFile(priority: LogLevel, tag: String, message: String) {
-        if (settings != null) {
-            val string = "${settings.timeFormat.format(Date())} ${priority.string}/$tag ($pid): $message\n"
-            fileHandler?.publish(LogRecord(Level.INFO, string))
-        }
+        val string = "${settings.timeFormat.format(Date())} ${priority.string}/$tag ($pid): $message\n"
+        fileHandler?.publish(LogRecord(Level.INFO, string))
     }
 
 

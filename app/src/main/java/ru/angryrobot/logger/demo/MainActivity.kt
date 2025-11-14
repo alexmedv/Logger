@@ -36,11 +36,11 @@ class MainActivity : AppCompatActivity() {
         }
         setContentView(binding.root)
 
-        log.crashlyticsExceptionLogger = {
+        log.settings.crashlyticsExceptionLogger = {
             //FirebaseCrashlytics.getInstance().recordException(it)
         }
 
-        log.crashlyticsLogger = {
+        log.settings.crashlyticsLogger = {
             //FirebaseCrashlytics.getInstance().log(it)
         }
 
@@ -54,9 +54,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        binding.destroy.setOnClickListener {
-            log.destroy()
-        }
 
         binding.logVerbose.setOnClickListener {
             log.v("Simple \'verbose\' log entry")
@@ -83,11 +80,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.writeToFiles.setOnCheckedChangeListener { _, isChecked ->
-            log.writeToFile = isChecked
+            log.settings.writeToFile = isChecked
         }
 
         binding.writeToLogcat.setOnCheckedChangeListener { _, isChecked ->
-            log.writeToLogcat = isChecked
+            log.settings.writeToLogcat = isChecked
         }
     }
 

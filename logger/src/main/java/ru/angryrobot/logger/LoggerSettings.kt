@@ -36,12 +36,12 @@ class LoggerSettings(
      * The maximum number of bytes to write to any one file. When the limit is reached - a new file will be created
      * If the field is zero, the file size is unlimited
      */
-    @IntRange(from = 0) val logFilesSize: Int = 1024 * 1024,
+    @field:IntRange(from = 0) val logFilesSize: Int = 1024 * 1024,
 
     /**
      * Maximum number of log files in the directory
      */
-    @IntRange(from = 1) val logFilesCount: Int = 5,
+    @field:IntRange(from = 1) val logFilesCount: Int = 5,
 
     /**
      * Sets the name for the log files. The logger will add a number to the end of the name,
@@ -52,7 +52,33 @@ class LoggerSettings(
     /**
      * Timestamp format
      */
-    @SuppressLint("ConstantLocale")
-    val timeFormat: DateFormat = SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US)
+    @field:SuppressLint("ConstantLocale")
+    val timeFormat: DateFormat = SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US),
 
+    /**
+     * Used for integration with crash reporter systems like Firebase Crashlytics.
+     * Typical use case, call `FirebaseCrashlytics.getInstance().log(message)` in this function.
+     * It's needed to give more context for the events leading up to a crash.
+     */
+    var crashlyticsLogger: ((String) -> Unit)? = null,
+
+    /**
+     * Used for integration with crash reporter systems like Firebase Crashlytics.
+     * Typical use case, call `FirebaseCrashlytics.getInstance().recordException(throwable)` in this function.
+     * It's needed to log non-fatal exceptions in the app.
+     */
+    var crashlyticsExceptionLogger: ((Throwable) -> Unit)? = null,
+
+    /**
+     * If enabled, logging to `LogCat` is allowed.
+     * Typical use case - disable `LogCat` logging in a release build
+     */
+    var writeToLogcat: Boolean = true,
+
+    /**
+     * If enabled, logging to files is allowed ([settings] must be non null)
+     *
+     * @see settings
+     */
+    var writeToFile: Boolean = true,
 )

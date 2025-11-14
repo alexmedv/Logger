@@ -34,7 +34,6 @@ import java.util.zip.ZipOutputStream
  * @throws IllegalStateException if logger is not configured to write logs to the files
  */
 fun Logger.compressLogs(zipFile: File) {
-    if (settings == null) throw IllegalStateException("Logger is not configured to write logs to the files")
     val files = settings.logsDir.listFiles() ?: emptyArray()
     val zipOutput = ZipOutputStream(FileOutputStream(zipFile))
     for (file in files) {
