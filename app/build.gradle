@@ -4,14 +4,17 @@ plugins {
 }
 
 android {
-    compileSdk 31
+
+    compileSdk {
+        version = release(36)
+    }
 
     defaultConfig {
         applicationId "ru.angryrobot.logger.demo"
-        minSdk 19
-        targetSdk 31
+        minSdk 21
+        targetSdk 36
         versionCode 1
-        versionName "1.0"
+        versionName "2.0"
     }
 
     buildTypes {
@@ -21,21 +24,22 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = "11"
     }
     buildFeatures {
         viewBinding true
     }
+    namespace 'ru.angryrobot.logger.demo'
 
 }
 
 dependencies {
     implementation project(path: ':logger')
-    implementation 'androidx.core:core-ktx:1.7.0'
-    implementation 'androidx.appcompat:appcompat:1.4.1'
-    implementation 'com.google.android.material:material:1.5.0'
+    implementation 'androidx.core:core-ktx:1.17.0'
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+    implementation 'com.google.android.material:material:1.13.0'
 }

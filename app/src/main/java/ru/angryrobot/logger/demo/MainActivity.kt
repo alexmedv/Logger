@@ -4,7 +4,12 @@ import android.os.Bundle
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.FrameLayout
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updateLayoutParams
 import ru.angryrobot.logger.LogLevel
 import ru.angryrobot.logger.Logger
 import ru.angryrobot.logger.demo.databinding.ActivityMainBinding
@@ -15,8 +20,20 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         log = getLogger()
         val binding = ActivityMainBinding.inflate(layoutInflater)
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, windowInsets ->
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() )
+            view.updateLayoutParams<FrameLayout.LayoutParams> {
+                topMargin = insets.top
+                leftMargin = insets.left
+                bottomMargin = insets.bottom
+                rightMargin = insets.right
+            }
+
+            WindowInsetsCompat.CONSUMED
+        }
         setContentView(binding.root)
 
         log.crashlyticsExceptionLogger = {
